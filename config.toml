@@ -39,7 +39,7 @@ canonifyurls = true
   #gravatarEmail = "info@joshuahancock.org"
   # Your profile picture
   # Overwritten by your gravatar image if `author.gravatarEmail` is filled
-  picture = "https://github.com/joshuahancock/joshuahancock.github.io/blob/master/images/author.jpg?raw=true"
+  picture = "https://github.com/joshuahancock/joshuahancock.github.io/blob/master/images/avatar.jpg?raw=true"
   # Your Twitter username without the @. E.g : thibaudlepretre
   # twitter = "thibaudlepretre"
   # Your google plus profile id. E.g : +ThibaudLepretre or 114625208755123718311
