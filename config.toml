@@ -12,7 +12,7 @@
 # For developpers, if you modify this theme, put your images in `source/images` folder and
 # use grunt task `build` to synchronize assets
 
-baseurl = ""
+baseurl = "joshuahancock.org"
 languageCode = "en-us"
 defaultContentLanguage = "en-us"
 title = "Hugo tranquilpeak theme"
@@ -83,12 +83,13 @@ canonifyurls = true
   name = "GitHub"
   pre = "<i class=\"sidebar-button-icon fa fa-lg fa-github\"></i>"
   url = "https://github.com/joshuahancock"
-[[menu.links]]
-  weight = 1
-  identifier = "stackoverflow"
-  name = "Stack Overflow"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-stack-overflow\"></i>"
-  url = "https://stackoverflow.com/users/636472/kakawait"
+
+#[[menu.links]]
+#  weight = 1
+#  identifier = "stackoverflow"
+#  name = "Stack Overflow"
+#  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-stack-overflow\"></i>"
+#  url = "https://stackoverflow.com/users/636472/kakawait"
 
 [[menu.misc]]
   weight = 0
@@ -114,7 +115,7 @@ canonifyurls = true
   # If false it will flat categories.
   hierarchicalCategories = true
 
-  description = "Hugo tranquilpeak theme demo"
+  description = "Josh Hancock"
 
   # Customization
   # Define the behavior of the sidebar
