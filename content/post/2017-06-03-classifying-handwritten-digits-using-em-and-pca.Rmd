@@ -2,7 +2,6 @@
 title: "Classifying Handwritten Digits Using EM and PCA"
 author: "Josh Hancock"
 date: 2017-06-03
-coverImage: "heat-plot_large.jpeg"
 tags: ["machine learning", "R", "PCA", "EM", "kmeans", "clustering"]
 categories: ["machine learning"]
 ---
@@ -24,7 +23,7 @@ Each row of the data represents one handwritten digit, which were digitally scan
 
 ```{r,eval = FALSE}
 labels <-apply(data[, 257:266], 1, function(xx){return(which(xx == "1") -1)})
-```
+``` 
 
 Before we start clustering, we need to take care of a few global variables and run our initial clustering algorithm.
 
