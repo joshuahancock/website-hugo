@@ -15,10 +15,10 @@
 baseurl = ""
 languageCode = "en-us"
 defaultContentLanguage = "en-us"
-title = "Hugo tranquilpeak theme"
+title = "Josh Hancock"
 theme = "hugo-tranquilpeak-theme"
 disqusShortname = "hugo-tranquilpeak-theme"
-# googleAnalytics = "UA-123-45"
+# googleAnalytics = ""
 paginate = 7
 canonifyurls = true
 
