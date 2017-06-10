@@ -2,6 +2,7 @@
 title: "Classifying Handwritten Digits Using EM and PCA"
 author: "Josh Hancock"
 date: 2017-06-03
+coverImage: "heat-plot_large.jpeg"
 tags: ["machine learning", "R", "PCA", "EM", "kmeans", "clustering"]
 categories: ["machine learning"]
 ---
@@ -182,7 +183,7 @@ image(t(matrix(randomPick, byrow=TRUE, 16, 16)[16:1, ]), col = topo.colors(255, 
 <p class="caption">Fig 2: cluster means versus random draws</p>
 </div>
 <p>A visual inspection reveals quite a bit of about the clusters. The cluster means are much more discernible than random draws from the distribution. Several are the numbers are quite distinguishable, while others are less defined, especially in pixels that intersect with similar numbers. Zero appears twice, and numbers two and three have gotten mixed in with other digits.</p>
-<p>The next step will be to examine the classification and misclassification rates of our model. We must first define one of these rates, as the other is simply <span class="math inline">\((1 - rate)\)</span>. Using the ground truth labels, We will define the misclassification rate as the proportion of each digit not assigned to the same cluster that the majority of that digit is assigned to. The following code will allow us to calculate the misclassification rates for each digit.</p>
+<p>The next step will be to examine the classification and misclassification rates of our model. We must first define one of these rates, as the other is simply <span class="math inline">\((1 - rate)\)</span>. Using the ground truth labels, we will define the misclassification rate as the proportion of each digit not assigned to the same cluster that the majority of that digit is assigned to. The following code will allow us to calculate the misclassification rates for each digit.</p>
 <pre class="r"><code>get.mode &lt;- function(x) {
 x.values &lt;- unique(x)
 totals &lt;- tabulate(match(x, x.values))
