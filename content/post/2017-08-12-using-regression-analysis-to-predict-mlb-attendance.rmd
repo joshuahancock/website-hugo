@@ -1,0 +1,11 @@
+---
+title: "Using Regression Analysis to Predict MLB Attendance"
+author: "Josh Hancock"
+date: 2017-06-28
+coverImage: "heat_plot_large.jpeg"
+thumbnailImage: "images/heat_plot_large.jpeg"
+tags: ["linear regression", "R"]
+categories: ["regression"]
+---
+
+
