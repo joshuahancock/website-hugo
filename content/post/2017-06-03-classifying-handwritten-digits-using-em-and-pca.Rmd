@@ -8,7 +8,7 @@ tags: ["machine learning", "R", "PCA", "EM", "kmeans", "clustering"]
 categories: ["machine learning"]
 ---
 
-In this post, we'll take the Semeion Handwritten Digits data set (<http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>) and cluster the handwritten digits data using the EM algorithm with a principle components step within each maximization.
+In this post, we'll take the [Semeion Handwritten Digits] (http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit) data set and cluster the handwritten digits data using the EM algorithm with a principle components step within each maximization.
 
 First, we'll read in the data, load the additional libraries, and create our initial data table.
 
