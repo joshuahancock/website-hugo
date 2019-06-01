@@ -125,7 +125,8 @@ vif(lmod)</code></pre>
 ##           hrs         pop60      medInc60 
 ##      1.239714      6.656949      1.627345</code></pre>
 <p>All the VIF levels are under 10 (including <em>stadiumCap</em>), so we now move to graphically checking the variance (see Appendix C for plot).</p>
-<p>From the plot we can safely assess that the variance appears to be constant and no further investigation is needed. Next, we will check normality assumptions (see Appendix C for plot).</p>
+<p>From the plot we can safely assess that the variance appears to be constant and no further investigation is needed.
+Next, we will check normality assumptions (see Appendix C for plot).</p>
 <p>The qqplot appears to show that the data is short-tailed, which is acceptable. We can conclude that no transformation of our model is needed because there doesn’t appear to be any problems with variance or linearity.</p>
 <p>Next we will check for high leverages in our data:</p>
 <pre class="r"><code>hatv &lt;- hatvalues(lmod)
