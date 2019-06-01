@@ -32,7 +32,7 @@ canonifyurls = true
 
 [author]
   name = "Josh Hancock"
-  bio = "MLB > NBA >>>>>> NFL"
+  bio = "info@joshuahancock.org"
   job = "Senior Data Scientist @ Nike"
   location = "Portland, OR"
   # Your Gravatar email. Overwrite `author.picture` everywhere in the blog
