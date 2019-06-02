@@ -1,8 +1,7 @@
 ---
 title: "Using Regression Analysis to Predict MLB Attendance"
 author: "Josh Hancock"
-date: '2017-06-02'
-output: pdf_document
+date: '2019-04-02'
 coverImage: heat_plot_large.jpeg
 tags:
 - linear regression
