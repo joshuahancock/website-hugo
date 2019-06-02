@@ -1,0 +1,302 @@
+---
+title: "Classifying Handwritten Digits Using EM and PCA"
+author: "Josh Hancock"
+date: 2019-02-03
+coverImage: "heat_plot_large.jpeg"
+thumbnailImage: "images/heat_plot_large.jpeg"
+tags: ["machine learning", "R", "PCA", "EM", "kmeans", "clustering"]
+categories: ["machine learning"]
+---
+
+
+
+<p>In this post, we’ll take the [Semeion Handwritten Digits] (<a href="http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit" class="uri">http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit</a>) data set and cluster the handwritten digits data using the EM algorithm with a principle components step within each maximization.</p>
+<p>First, we’ll read in the data, load the additional libraries, and create our initial data table.</p>
+<pre class="r"><code>library(&quot;mvtnorm&quot;)
+library(&quot;data.table&quot;)
+# Reading data and convert to data table
+setwd(&quot;C:/Users/Josh/Documents/GitHub/joshuahancock.github.io/data_sets/&quot;)
+data &lt;- fread(&quot;C:/Users/Josh/Documents/GitHub/joshuahancock.github.io/data_sets/semeion.csv&quot;, header = FALSE)
+x &lt;- data[, 1:256]</code></pre>
+<p>Each row of the data represents one handwritten digit, which were digitally scanned and stretched into a 16x16 pixel box. Each of these 256 pixels, originally in grey scale, was thresholded into a binary value that indicates ‘black’ or ‘white’ for that pixel. There are 10 additional columns (also binary), which indicate group membership. We’ll need to separate those labels into their own data table.</p>
+<pre class="r"><code>labels &lt;-apply(data[, 257:266], 1, function(xx){return(which(xx == &quot;1&quot;) -1)})</code></pre>
+<p>Before we start clustering, we need to take care of a few global variables and run our initial clustering algorithm.</p>
+<pre class="r"><code># k is the number of clusters
+k &lt;- 10
+# n is the number of observations
+n &lt;- nrow(x)
+# d is the number of diwmensions
+d &lt;- ncol(x)
+# q represents the number of principal components and will need to be manually changed
+q &lt;- 6
+# x.clusters are the clusters using k means and 100 random starts
+x.clusters &lt;- kmeans(x, k, nstart = 100)</code></pre>
+<p>Now that we have preliminary clusters, we’ll initialize our <span class="math inline">\(\gamma\)</span> matrix, which will hold the cluster membership probabilities for each observation. We then use <span class="math inline">\(\gamma\)</span> to calculate <span class="math inline">\(\Pi_k\)</span>, the proportion of observations assigned to cluster <span class="math inline">\(k\)</span>, and <span class="math inline">\(\mu_k\)</span>, the mean of the observations within each cluster <span class="math inline">\(k\)</span>.</p>
+<pre class="r"><code># n by k matrix, initialized with zeros
+gamma &lt;- matrix(0, n, k)
+# indicate the inital custer membership with a binary label
+for(i in 1:n) {gamma[i, x.clusters$cluster[i]] = 1}
+# the number of members in each cluster
+N &lt;- colSums(gamma)
+# the percentage of the data set in cluster k
+pi.hat &lt;- N/n
+# the mean for each pixel in each cluster
+# note: a matrix is required for the t() function
+mu.hat &lt;- (t(gamma) %*% data.matrix(x))/ N</code></pre>
+<p>Before beginning the EM algorithm, we must initialize a covariance matrix for each pixel of each cluster. To do this, we’ll write a function to calculate the covariance for each cluster and store the result in a list of length <span class="math inline">\(k\)</span>.</p>
+<pre class="r"><code>sigma.k &lt;- function(GAMMA, X, MU, X.CLUSTERS, q){
+# initialize empty list to hold sigma matricies  
+sigma.list &lt;- list()
+# normailze columns
+g.norm &lt;- t(t(GAMMA)/N)
+# iterate over each cluster
+for(i in 1:k){
+# for each observation in the data set, subtract the mu
+x.mu &lt;- t(apply(X, 1, function(xx) xx-MU[i, ]))
+# create convariance matrix
+g.x.mu &lt;- t(g.norm[, i] * x.mu) %*% x.mu
+# eigen decomposition
+x.decomp &lt;- eigen(g.x.mu)
+# principal components step 
+if(q &gt; 0){
+sig.hat &lt;- sum(x.decomp$values[as.integer(q + 1):as.integer(d)]) / (d - q)
+decomp.vec &lt;- x.decomp$vectors[, 1:q]
+lambda &lt;- x.decomp$values[1:q]
+W &lt;- decomp.vec %*% (diag(q) * sqrt(lambda - sig.hat)) %*% t(decomp.vec)
+sigma.list[[i]] &lt;- W %*% t(W) + sig.hat * diag(d)
+}
+else {
+sigma.list[[i]] &lt;- diag(d) * sum(x.decomp$values) / d
+}
+}
+return(sigma.list)
+}</code></pre>
+<p>Now that we’ve defined our function, we can initialize our <span class="math inline">\(\Sigma\)</span> element:</p>
+<pre class="r"><code>sigma.hat &lt;- sigma.k(gamma, x, mu.hat, x.clusters, q)</code></pre>
+<p>Now that we have our basis functions and structure initialized, we can begin with the E and M steps of the process. In order to do that, we need to define a few more functions. First, we’ll update our <span class="math inline">\(\gamma\)</span> matrix with the following function:</p>
+<pre class="r"><code>update.gamma &lt;- function(PI, SIGMA , X, MU){
+# a temp matrix to store gamma values
+p.mu.sig &lt;- matrix(nrow = n, ncol = k)
+# iterate over clusters
+for(i in 1:k){
+# weight raw probabilities by pi
+p.mu.sig[, i] &lt;- PI[i] * dmvnorm(X, MU[i, ], SIGMA[[i]])
+}
+weights &lt;- rowSums(p.mu.sig)
+# returns normalized rows
+return(p.mu.sig / weights)
+}</code></pre>
+<p>Next, we need a function to calculate the log likelihood:</p>
+<pre class="r"><code>LL &lt;- function(PI, SIGMA, X, MU){
+# keeps a running track of the sum
+iter.sum &lt;- c(rep(0, n))
+for(i in 1:k){
+iter.sum &lt;- iter.sum + PI[i] * dmvnorm(X, MU[i, ], SIGMA[[i]])
+}
+return(sum(log(iter.sum)))
+}</code></pre>
+<p>Finally, we need a function to calculate the AIC, so that we’ll be able to pick the proper number of principal components to use with our algorithm.</p>
+<pre class="r"><code>AIC &lt;- function(LL, q){
+return(-2 * LL + 2 * (d * q + 1 - q* (q - 1) / 2))
+}</code></pre>
+<p>Now, we’re ready to begin our algorithm. The first step, or <span class="math inline">\(E\)</span> step, updates the <span class="math inline">\(\gamma\)</span> matrix. The second, or <span class="math inline">\(M\)</span>, step calculates the new <span class="math inline">\(\mu_k\)</span>, <span class="math inline">\(\pi_k\)</span>, and <span class="math inline">\(\Sigma_k\)</span> based on the updated <span class="math inline">\(\gamma\)</span> matrix. At the end of each iteration the log likelihood is calculated and after a predetermined number of iterations, the process should converge. Here, we will choose 50 iterations, which we will then examine graphically.</p>
+<pre class="r"><code>LL.list &lt;- c()
+AIC.list &lt;- c()
+iters &lt;- 0
+while(iters &lt; 51){
+gamma &lt;- update.gamma(pi.hat, sigma.hat, x , mu.hat)
+N &lt;- colSums(gamma)
+pi.hat &lt;- N / n
+mu.hat &lt;- (t(gamma) %*% as.matrix(x)) / N
+sigma.hat &lt;- sigma.k(gamma, x, mu.hat, x, q)
+log.likelihood &lt;- LL(pi.hat, sigma.hat, x, mu.hat)
+LL.list &lt;- c(LL.list, log.likelihood)
+iters &lt;- iters + 1
+}
+AIC.q &lt;- AIC(tail(LL.list, 1), q)
+AIC.list &lt;- c(AIC.list, AIC.q)
+if(q == 0){
+  ll.plot &lt;- as.matrix(LL.list)
+} else{
+  print(iters)
+  ll.plot &lt;- cbind(ll.plot, LL.list)
+}
+AIC.table &lt;- rbind(AIC.table, cbind(q, AIC.q)</code></pre>
+<p>Some simple code to plot the log likelihood for each <span class="math inline">\(q\)</span>:</p>
+<pre class="r"><code># a vector of q values
+q.list &lt;- c(0, 2, 4, 6)
+par(mfrow=c(2,2))
+# plot each column of the object holding our likelihood values
+for(i in 1:4){
+plot(ll.plot[, i], ylab = &quot;Log Likelihood&quot;, xlab = &quot;Iteration&quot;,
+main=paste(&quot;q&quot;, q.list[i], sep= &quot; = &quot;))}</code></pre>
+<div class="figure">
+<img src="q_plot.jpeg" alt="Fig 1: convergance of the EM algorithm" />
+<p class="caption">Fig 1: convergance of the EM algorithm</p>
+</div>
+<p>As we can see from the plots, the algorithm needed far fewer than 50 iterations to converge. We can also see the dramatic change in log likelihood values and <span class="math inline">\(q\)</span> increases. As previously mentioned, we’re using the value of <span class="math inline">\(q\)</span> which minimizes AIC:</p>
+<br><br>
+<center>
+<table style="width:29%;">
+<caption>AIC value for each <span class="math inline">\(q\)</span>:</caption>
+<colgroup>
+<col width="11%" />
+<col width="18%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>q</th>
+<th>AIC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>6</td>
+<td>255256.93</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>291812.73</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>346328.17</td>
+</tr>
+<tr class="even">
+<td>0</td>
+<td>420376.53</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p><br></p>
+<p>We can see that <span class="math inline">\(q = 6\)</span> minimizes the AIC, so that is the number of principal components we’ll use for our model, which we’ll now assess for accuracy. First, we’ll create a panel plot comparing the mean of each cluster to a five random draws from the distribution.</p>
+<pre class="r"><code>par(mai = c(0.05, 0.05, 0.05, 0.05), mfrow = c(10, 6))
+for(i in 1:k){
+image(t(matrix(mu.hat[i, ], byrow = TRUE, 16, 16)[16:1, ]), col = topo.colors(255, alpha = 0.75), axes = FALSE)
+box()
+for(j in 1:5){
+randomPick &lt;- rmvnorm(1, mu.hat[i, ], sigma.hat[[i]])
+image(t(matrix(randomPick, byrow=TRUE, 16, 16)[16:1, ]), col = topo.colors(255, alpha = 0.75), axes = FALSE)
+}
+}</code></pre>
+<div class="figure">
+<img src="mean_plot.jpeg" alt="Fig 2: cluster means versus random draws" />
+<p class="caption">Fig 2: cluster means versus random draws</p>
+</div>
+<p>A visual inspection reveals quite a bit of about the clusters. The cluster means are much more discernible than random draws from the distribution. Several are the numbers are quite distinguishable, while others are less defined, especially in pixels that intersect with similar numbers. Zero appears twice, and numbers two and three have gotten mixed in with other digits.</p>
+<p>The next step will be to examine the classification and misclassification rates of our model. We must first define one of these rates, as the other is simply <span class="math inline">\((1 - rate)\)</span>. Using the ground truth labels, we will define the misclassification rate as the proportion of each digit not assigned to the same cluster that the majority of that digit is assigned to. The following code will allow us to calculate the misclassification rates for each digit.</p>
+<pre class="r"><code>get.mode &lt;- function(x) {
+x.values &lt;- unique(x)
+totals &lt;- tabulate(match(x, x.values))
+return(c(x.values[which.max(totals)], max(totals)))
+}
+which.digit &lt;- c()
+for(i in 1:n){
+which.digit &lt;- c(which.digit, which.max(gamma[i, ]) )
+}
+digit.mapping &lt;- matrix(0, 10, 2)
+for(ii in 1:k){
+indices &lt;- which(which.digit == ii - 1)
+digit.mapping[ii, ] &lt;- get.mode(which.digit[indices]) }
+ground.truth &lt;- tabulate(match(which.digit, unique(which.digit)))
+truth.prop &lt;- digit.mapping[, 2] / ground.truth
+mis.truth &lt;- 1 - truth.prop
+mis.class &lt;- 1 - sum(digit.mapping[, 2]) / n</code></pre>
+Which gives us the following table:
+<br><br>
+<center>
+<table style="width:62%;">
+<caption>MCR(misclassification rate)</caption>
+<colgroup>
+<col width="11%" />
+<col width="13%" />
+<col width="15%" />
+<col width="11%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Digit</th>
+<th>Cluster</th>
+<th>Quantity</th>
+<th>Total</th>
+<th>MCR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>1</td>
+<td>87</td>
+<td>161</td>
+<td>0.46</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>7</td>
+<td>99</td>
+<td>162</td>
+<td>0.39</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>3</td>
+<td>105</td>
+<td>159</td>
+<td>0.34</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>6</td>
+<td>105</td>
+<td>159</td>
+<td>0.34</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>8</td>
+<td>138</td>
+<td>161</td>
+<td>0.14</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>10</td>
+<td>76</td>
+<td>159</td>
+<td>0.52</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>4</td>
+<td>116</td>
+<td>161</td>
+<td>0.28</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>2</td>
+<td>134</td>
+<td>159</td>
+<td>0.15</td>
+</tr>
+<tr class="odd">
+<td>8</td>
+<td>5</td>
+<td>118</td>
+<td>155</td>
+<td>0.24</td>
+</tr>
+<tr class="even">
+<td>9</td>
+<td>10</td>
+<td>78</td>
+<td>158</td>
+<td>0.51</td>
+</tr>
+</tbody>
+</table>
+</center>
+<p><br></p>
+<p>This MCR table helps shed some light on inferences we made from the previous plots. Cluster 9, which most closely resembles a zero, was not the most common cluster for any digit. Cluster 10 was the most common cluster for both five and nine. The clusters with the lower misclassification rate tend to be the clusters with the most clearly defined mean plots in <em>Fig 2</em>.</p>
