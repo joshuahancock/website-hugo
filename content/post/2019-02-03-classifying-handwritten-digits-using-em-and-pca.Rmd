@@ -18,12 +18,12 @@ library("data.table")
 # Reading data and convert to data table
 setwd("C:/Users/Josh/Documents/GitHub/joshuahancock.github.io/data_sets/")
 data <- fread("C:/Users/Josh/Documents/GitHub/joshuahancock.github.io/data_sets/semeion.csv", header = FALSE)
-x <- data[, 1:256]
 ```
 
 Each row of the data represents one handwritten digit, which were digitally scanned and stretched into a 16x16 pixel box. Each of these 256 pixels, originally in grey scale, was thresholded into a binary value that indicates 'black' or 'white' for that pixel. There are 10 additional columns (also binary), which indicate group membership. We'll need to separate those labels into their own data table.
 
 ```{r,eval = FALSE}
+x <- data[, 1:256]
 labels <-apply(data[, 257:266], 1, function(xx){return(which(xx == "1") -1)})
 ``` 
 
