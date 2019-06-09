@@ -95,7 +95,7 @@ iter.sum &lt;- iter.sum + PI[i] * dmvnorm(X, MU[i, ], SIGMA[[i]])
 }
 return(sum(log(iter.sum)))
 }</code></pre>
-<p>Finally, we need a function to calculate the AIC, so that we’ll be able to pick the proper number of principal components to use with our algorithm.</p>
+<p>Finally, we need a function to calculate the AIC so that we’ll be able to pick the proper number of principal components to use with our algorithm.</p>
 <pre class="r"><code>AIC &lt;- function(LL, q){
 return(-2 * LL + 2 * (d * q + 1 - q* (q - 1) / 2))
 }</code></pre>

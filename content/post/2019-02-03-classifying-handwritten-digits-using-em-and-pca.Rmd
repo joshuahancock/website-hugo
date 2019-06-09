@@ -126,7 +126,7 @@ return(sum(log(iter.sum)))
 }
 ```
 
-Finally, we need a function to calculate the AIC, so that we'll be able to pick the proper number of principal components to use with our algorithm.
+Finally, we need a function to calculate the AIC so that we'll be able to pick the proper number of principal components to use with our algorithm.
 
 ```{r, eval = FALSE}
 AIC <- function(LL, q){
